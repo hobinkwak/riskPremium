@@ -26,6 +26,30 @@ if __name__ == '__main__':
     print(res_two)
     print(res_three)
 
+    ######### FRED-MD Sparse PCA Factor ######
+    #################################
+    macro = pd.read_csv('D:/workspace/project/MacroPCA/result/factors sparse.csv',
+                        index_col=['date'], parse_dates=['date'])
+    port = pd.read_csv('D:/workspace/project/Risk premia Estimation/data/port.csv', index_col=[0],
+                       parse_dates=[0]).dropna()
+    port /= 100
+    start, end = max(port.index[0], macro.index[0]), min(port.index[-1], macro.index[-1])
+    macro = macro.loc[start:end]
+    port = port.loc[start:end]
+
+    ff_factor = 'F-F_Research_Data_5_Factors_2x3'
+    ff_factor_data = web.DataReader(ff_factor, 'famafrench', start=start, end=end)[0]
+    ff_factor_data /= 100
+
+    port = port - ff_factor_data['RF'].values.reshape(-1, 1)
+    Est = Estimator(port, macro)
+
+    res_two = Est.two_pass(True, lag=None).T
+    res_three = Est.three_pass(max_k=300, lag=None).T
+    print(res_two)
+    print(res_three)
+
+
     ###################
     ########### ff5 factor #############
     #################
