@@ -4,7 +4,7 @@ if __name__ == '__main__':
     from pandas_datareader import data as web
 
     ######### FRED-MD PCA Factor ######
-    ### 할거면 FRED MD 서, 아래 시간 축 맞추고 돌린 후 진행 ####
+    #################################
     macro = pd.read_csv('D:/workspace/project/Macro Factor Mimicking Portfolio/fmp/data/factors.csv',
                         index_col=['date'], parse_dates=['date'])
     port = pd.read_csv('D:/workspace/project/Risk premia Estimation/data/port.csv', index_col=[0],
@@ -21,31 +21,31 @@ if __name__ == '__main__':
     port = port - ff_factor_data['RF'].values.reshape(-1, 1)
     Est = Estimator(port, macro)
 
-    res_two = Est.two_pass(True).T
-    res_three = Est.three_pass(max_k=300).T
+    res_two = Est.two_pass(True, lag=1).T
+    res_three = Est.three_pass(max_k=300, lag=1).T
     print(res_two)
     print(res_three)
 
     ###################
     ########### ff5 factor #############
     #################
-
-    ff_factor = 'F-F_Research_Data_5_Factors_2x3'
-    ff_factor_data = web.DataReader(ff_factor, 'famafrench', start=start, end=end)[0]
-    ff_factor_data.index = ff_factor_data.index.to_timestamp()
-    ff_factor_data /= 100
     port = pd.read_csv('D:/workspace/project/Risk premia Estimation/data/port.csv', index_col=[0],
                        parse_dates=[0]).dropna()
     port /= 100
+
+    ff_factor = 'F-F_Research_Data_5_Factors_2x3'
+    ff_factor_data = web.DataReader(ff_factor, 'famafrench', start=port.index[0])[0]
+    ff_factor_data.index = ff_factor_data.index.to_timestamp()
+    ff_factor_data /= 100
 
     start, end = max(port.index[0], ff_factor_data.index[0]), min(port.index[-1], ff_factor_data.index[-1])
     ff_factor_data = ff_factor_data.loc[start:end]
     port = port.loc[start:end]
     port = port - ff_factor_data['RF'].values.reshape(-1, 1)
 
-    Est = Estimator(port, ff_factor_data)
-    res_two = Est.two_pass(True).T
-    res_three = Est.three_pass(max_k=300).T
+    Est = Estimator(port, ff_factor_data[['Mkt-RF', 'SMB', 'HML', 'RMW', 'CMA']])
+    res_two = Est.two_pass(True, lag=1).T
+    res_three = Est.three_pass(max_k=300, lag=1).T
 
     print(res_two)
     print(res_three)
@@ -63,7 +63,10 @@ if __name__ == '__main__':
                   8: 'Stock market'}
     group_factors = {}
     for g in group_info.values():
-        group_factors[g] = pd.read_csv(f'D:/workspace/project/MacroPCA/result/factors {g}.csv', index_col=['date'], parse_dates=['date'])['0']
+        group_factors[g] = \
+            pd.read_csv(f'D:/workspace/project/MacroPCA/result/factors {g}.csv', index_col=['date'],
+                        parse_dates=['date'])[
+                '0']
     macro = pd.DataFrame(group_factors)
     port = pd.read_csv('D:/workspace/project/Risk premia Estimation/data/port.csv', index_col=[0],
                        parse_dates=[0]).dropna()
@@ -77,8 +80,8 @@ if __name__ == '__main__':
     port = port - ff_factor_data['RF'].values.reshape(-1, 1)
 
     Est = Estimator(port, macro)
-    res_two = Est.two_pass(True).T
-    res_three = Est.three_pass(max_k=300).T
+    res_two = Est.two_pass(True, lag=None).T
+    res_three = Est.three_pass(max_k=300, lag=None).T
     print(res_two)
     print(res_three)
 
@@ -102,8 +105,7 @@ if __name__ == '__main__':
 
     port = port - ff_factor_data['RF'].values.reshape(-1, 1)
     Est = Estimator(port, macro)
-    res_two = Est.two_pass(True).T
-    res_three = Est.three_pass(max_k=300).T
+    res_two = Est.two_pass(True, lag=1).T
+    res_three = Est.three_pass(max_k=300, lag=1).T
     print(res_two)
     print(res_three)
-

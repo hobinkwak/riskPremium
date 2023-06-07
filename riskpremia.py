@@ -11,9 +11,13 @@ class Estimator:
         self.macro_index = macro_factor.index
         self.macro_cols = macro_factor.columns
 
-    def three_pass(self, max_k=None, return_fmp=False):
+    def three_pass(self, max_k=None, return_fmp=False, lag=None):
         """
         Asset Pricing with omitted factors
+
+        lag = 1
+        Gow et al. (2010) used different lags in their analysis of the Fama-MacBeth-Newey-West methodology
+        and found that lag of one to provide the least biased results.
         """
         if max_k is None:
             max_k = self.rtn.shape[-1] - 1
@@ -31,7 +35,7 @@ class Estimator:
         eta = self._get_eta(macro_dm, V)  # d x p
         # G: d x T
         risk_premia, G = self._three_pass_risk_premia(V, eta, gamma)
-        se = self._three_pass_standard_error(V, macro_dm, eta, gamma)
+        se = self._three_pass_standard_error(V, macro_dm, eta, gamma, q=lag)
         t_stat = risk_premia / se
         r2g = self._get_r2g(macro_dm, eta, V)
         result = pd.DataFrame([t_stat, risk_premia, se, r2g],
@@ -100,6 +104,11 @@ class Estimator:
         Z = (macro_dm - eta @ V)  # d x T
         d, T = Z.shape
 
+        if q is None:
+            # https://economics.ucr.edu/wp-content/uploads/2019/10/Kamstra-paper-for-3-16-18-seminar.pdf
+            q = int(4 * (T/100)**(2/9))
+            print('lag:', q)
+
         p = V.shape[0]
         Pi11 = np.zeros((d * p, d * p))
         for i in range(T):
@@ -109,7 +118,7 @@ class Estimator:
             for j in range(i + 1, T):
                 a = self._vec(Z[:, j - i].reshape(-1, 1) @ V[:, j - i].reshape(-1, 1).T)
                 b = self._vec((Z[:, j].reshape(-1, 1) @ V[:, j].reshape(-1, 1).T))
-                Pi11 += (1 - (i + 1) / 5) * (a @ b.T + b @ a.T) / T
+                Pi11 += (1 - (i + 1) / (q + 1)) * (a @ b.T + b @ a.T) / T
 
         Pi12 = np.zeros((d * p, p))
         for i in range(T):
@@ -119,14 +128,14 @@ class Estimator:
             for j in range(i + 1, T):
                 a = self._vec(Z[:, j - i].reshape(-1, 1) @ V[:, j - i].reshape(-1, 1).T)
                 b = self._vec(Z[:, j].reshape(-1, 1) @ V[:, j].reshape(-1, 1).T)
-                Pi12 += (1 - (i + 1) / 5) * (a @ V[:, j].reshape(-1, 1).T + b @ V[:, j - i].reshape(-1, 1).T) / T
+                Pi12 += (1 - (i + 1) / (q + 1)) * (a @ V[:, j].reshape(-1, 1).T + b @ V[:, j - i].reshape(-1, 1).T) / T
 
         Pi22 = np.zeros((p, p))
         for i in range(T):
             Pi22 += V[:, i].reshape(-1, 1) @ V[:, i].reshape(-1, 1).T / T
         for i in range(q):
             for j in range(i + 1, T):
-                Pi22 += (1 - (i + 1) / 5) * (
+                Pi22 += (1 - (i + 1) / (q + 1)) * (
                         V[:, j - i].reshape(-1, 1) @ V[:, j].reshape(-1, 1).T + V[:, j].reshape(-1, 1) @ V[:,
                                                                                                          j - i].reshape(
                     -1, 1).T) / T
@@ -141,7 +150,7 @@ class Estimator:
         se = np.sqrt(se)
         return se
 
-    def two_pass(self, adjust_autocorr=True):
+    def two_pass(self, adjust_autocorr=True, lag=1):
         """
         Fama-Macbeth style
         Fama MacBeth regressions provide standard errors corrected only for cross-sectional correlation.
@@ -152,6 +161,10 @@ class Estimator:
         where project holding periods tend to be long.
         For alternative methods of correcting standard errors for time series and cross-sectional correlation
         in the error term look into double clustering by firm and year
+
+        lag = 1
+        Gow et al. (2010) used different lags in their analysis of the Fama-MacBeth-Newey-West methodology
+        and found that lag of one to provide the least biased results.
         """
         rtn = self.rtn.values
         macro_factor = self.macro_factor.values
@@ -167,7 +180,11 @@ class Estimator:
         result = []
         for factor in lbds.columns:
             if adjust_autocorr:
-                res = sm.OLS(lbds[factor], np.ones(len(lbds[factor]))).fit(cov_type='HAC', cov_kwds={'maxlags': 4})
+                if lag is None:
+                    # https://economics.ucr.edu/wp-content/uploads/2019/10/Kamstra-paper-for-3-16-18-seminar.pdf
+                    lag = int(4 * (lbds[factor].shape[0] / 100) ** (2/9))
+                    print('lag:', lag)
+                res = sm.OLS(lbds[factor], np.ones(len(lbds[factor]))).fit(cov_type='HAC', cov_kwds={'maxlags': lag})
             else:
                 res = sm.OLS(lbds[factor], np.ones(len(lbds[factor]))).fit()
             result.append([res.tvalues.values[0], res.params.values[0], res.bse.values[0]])
