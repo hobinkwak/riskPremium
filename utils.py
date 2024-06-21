@@ -4,6 +4,10 @@ from numpy.linalg import svd
 
 
 def determine_n_factor(X, max_k, ic_mode):
+    """
+    Determining the Number of Factors in Approximate Factor Models (2003, Jushan Bai, Serena Ng)
+    """
+    
     if isinstance(X, pd.DataFrame):
         X = X.values
     T, N = X.shape
@@ -20,7 +24,8 @@ def determine_n_factor(X, max_k, ic_mode):
     elif ic_mode == 3:
         overfit_penalty = np.log(a) / a * ks
 
-    # 연산량 줄이기  (논문 상의 scaling constant는 제거 e.g. sqrt(T))
+    # reduce computational workload
+    # the scaling constant in the paper is removed   e.g. sqrt(T)
     large_T = T >= N
     if large_T:
         U, S, VT = np.linalg.svd(X.T @ X)
