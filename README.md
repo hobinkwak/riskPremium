@@ -2,7 +2,7 @@
 - Fama Macbeth Two Step Regression (1973)
 - Three pass method (2021)
 
-This study empirically analyzes methodologies for estimating risk premiums of factors. It compares the traditional Fama-Macbeth Two-Step Regression with the Three-Step Regression proposed in 2021, estimating risk premiums for the FF-5 factors and macroeconomic variables (hereinafter, macro factors). The Three-Step Regression produced more reasonable estimates when estimating the risk premiums of macro factors.
+This study empirically analyzes methodologies for estimating risk premiums of factors. It compares the traditional Fama-Macbeth Two-Step Regression with the Three-Step Regression proposed in 2021, estimating risk premiums for the FF-5 factors and macroeconomic variables. The Three-Step Regression produced more reasonable estimates when estimating the risk premiums of macro factors.
 
 
 ## Implementation
