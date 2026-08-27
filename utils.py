@@ -12,9 +12,14 @@ def determine_n_factor(X, max_k, ic_mode):
         X = X.values
     T, N = X.shape
     NT = N * T
+    a = min(N, T)
+
+    #  Bai-Ng(2002) 
+    cap = max(1, a // 2)
+    if max_k > cap:
+        max_k = cap
 
     ks = np.arange(1, max_k + 1)
-    a = min(N, T)
 
     # Calculate penalty
     if ic_mode == 1:
