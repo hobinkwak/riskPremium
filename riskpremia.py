@@ -115,30 +115,33 @@ class Estimator:
             a = self._vec(Z[:, i].reshape(-1, 1) @ V[:, i].reshape(-1, 1).T)
             Pi11 += a @ a.T / T
         for i in range(q):
-            for j in range(i + 1, T):
-                a = self._vec(Z[:, j - i].reshape(-1, 1) @ V[:, j - i].reshape(-1, 1).T)
+            h = i + 1
+            for j in range(h, T):
+                a = self._vec(Z[:, j - h].reshape(-1, 1) @ V[:, j - h].reshape(-1, 1).T)
                 b = self._vec((Z[:, j].reshape(-1, 1) @ V[:, j].reshape(-1, 1).T))
-                Pi11 += (1 - (i + 1) / (q + 1)) * (a @ b.T + b @ a.T) / T
+                Pi11 += (1 - h / (q + 1)) * (a @ b.T + b @ a.T) / T
 
         Pi12 = np.zeros((d * p, p))
         for i in range(T):
             a = self._vec(Z[:, i].reshape(-1, 1) @ V[:, i].reshape(-1, 1).T)
             Pi12 += a @ V[:, i].reshape(-1, 1).T / T
         for i in range(q):
-            for j in range(i + 1, T):
-                a = self._vec(Z[:, j - i].reshape(-1, 1) @ V[:, j - i].reshape(-1, 1).T)
+            h = i + 1
+            for j in range(h, T):
+                a = self._vec(Z[:, j - h].reshape(-1, 1) @ V[:, j - h].reshape(-1, 1).T)
                 b = self._vec(Z[:, j].reshape(-1, 1) @ V[:, j].reshape(-1, 1).T)
-                Pi12 += (1 - (i + 1) / (q + 1)) * (a @ V[:, j].reshape(-1, 1).T + b @ V[:, j - i].reshape(-1, 1).T) / T
+                Pi12 += (1 - h / (q + 1)) * (a @ V[:, j].reshape(-1, 1).T
+                                             + b @ V[:, j - h].reshape(-1, 1).T) / T
 
         Pi22 = np.zeros((p, p))
         for i in range(T):
             Pi22 += V[:, i].reshape(-1, 1) @ V[:, i].reshape(-1, 1).T / T
         for i in range(q):
-            for j in range(i + 1, T):
-                Pi22 += (1 - (i + 1) / (q + 1)) * (
-                        V[:, j - i].reshape(-1, 1) @ V[:, j].reshape(-1, 1).T + V[:, j].reshape(-1, 1) @ V[:,
-                                                                                                         j - i].reshape(
-                    -1, 1).T) / T
+            h = i + 1
+            for j in range(h, T):
+                vh = V[:, j - h].reshape(-1, 1)
+                vj = V[:, j].reshape(-1, 1)
+                Pi22 += (1 - h / (q + 1)) * (vh @ vj.T + vj @ vh.T) / T
 
         mat1 = np.kron(a=gamma.reshape(-1, 1).T @ np.linalg.inv(Sigma_v),
                        b=np.identity(d))
