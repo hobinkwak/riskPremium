@@ -52,6 +52,6 @@ def determine_n_factor(X, max_k, ic_mode):
     IC1[max_k] = np.log(V[max_k])  # value of the information criterion when using no factors
 
     ic_min_idx = IC1.argmin(axis=0)
-    optim_k = ic_min_idx + 1
+    optim_k = 0 if ic_min_idx == max_k else ic_min_idx + 1
 
     return optim_k
